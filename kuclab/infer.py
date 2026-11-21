@@ -59,6 +59,8 @@ class SafetyModel:
         self.threshold = threshold
         self.temperature = float(self.state.get("temperature", 1.0) or 1.0)
         self.must_catch_override = dict(self.state.get("must_catch_override") or {})
+        # Barist.5: category-head hard block off until the head passes its own recall gate
+        self.category_block = bool(getattr(self.model_config, "category_block", False) or self.state.get("category_block", False))
 
     def _cats(self) -> list[str]:
         from .categories import CATEGORIES
@@ -80,12 +82,13 @@ class SafetyModel:
         help_ctx = is_support_context(text)
         support = help_ctx or "self_harm" in hit
         cat_scores = dict(zip(cats, row[2:])) if cats else {}
-        if cats and "self_harm" in cats and cat_scores["self_harm"] >= 0.2:
-            support = True  # Barist.4: self_harm >= 0.2 -> support resources in ANY language
+        if self.category_block and cats and "self_harm" in cats and cat_scores["self_harm"] >= 0.2:
+            support = True  # model-based support routing only when the head is trusted
         # Hard block: sexual_abuse / self_harm >= 0.3 blocks regardless of language threshold
         # (0.3 is a BLOCK decision only, not a label threshold).
+        # Barist.5: gated behind category_block flag (head recall gate, default OFF).
         cat_block: list[str] = []
-        if cats and not help_ctx:  # help-other frames are never hard-blocked
+        if self.category_block and cats and not help_ctx:  # help-other frames are never hard-blocked
             cat_block = [c for c in ("sexual_abuse", "self_harm") if cat_scores.get(c, 0.0) >= 0.3]
             if cat_block:
                 is_unsafe = True

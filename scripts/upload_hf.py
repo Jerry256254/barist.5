@@ -74,7 +74,7 @@ def calibration_temperature() -> float:
 def lang_thresholds() -> dict:
     """Per-language binary thresholds from reports/lang_thresholds.json.
 
-    Barist.4: tuned on the tune half of textdetox targeting FPR<=5% on benign
+    Barist.5: tuned on the tune half of textdetox targeting FPR<=5% on benign
     rows with a floor of 0.3 (never below 0.3), only for languages with
     test-half F1 >= 0.5. 'default' (0.5) is used whenever detect_lang is unsure
     or the language is unsupported (cs/pt/... included -> documented default).
@@ -164,7 +164,8 @@ def llama_config(state: dict, tok_meta: dict, tok_ids: dict) -> dict:
         "bos_token_id": tok_ids["[BOS]"],
         "eos_token_id": tok_ids["[ASSISTANT]"],
         # Censer-specific metadata, kept for the standalone censer.py:
-        "name": "Barist.4",
+        "name": "Barist.5",
+        "category_block": False,  # Barist.5: head hard-block OFF until category recall gate passes
         "max_chars": int(state.get("max_chars", 4000)),
         "answer_ids": list(tok_meta["answer_ids"]),
         "special_tokens": list(tok_meta["special_tokens"]),
@@ -227,15 +228,15 @@ def build_bundle(ckpt: Path, out: Path) -> None:
     (out / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     shutil.copy2(Path(__file__).parent / "censer.py", out / "censer.py")
-    launcher = Path(__file__).parent / "barist.4"
-    shutil.copy2(launcher, out / "barist.4")
-    os.chmod(out / "barist.4", 0o755)
+    launcher = Path(__file__).parent / "barist.5"
+    shutil.copy2(launcher, out / "barist.5")
+    os.chmod(out / "barist.5", 0o755)
     (out / "README.md").write_text(MODEL_CARD, encoding="utf-8")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Upload Barist.4 to the Hugging Face Hub.")
-    parser.add_argument("--repo", default="KucLab/Barist.4", help="e.g. KucLab/Barist.4")
+    parser = argparse.ArgumentParser(description="Upload Barist.5 to the Hugging Face Hub.")
+    parser.add_argument("--repo", default="KucLab/Barist.5", help="e.g. KucLab/Barist.5")
     parser.add_argument("--checkpoint", default="checkpoints/best.pt")
     parser.add_argument("--private", action="store_true")
     parser.add_argument("--dry-run", action="store_true")

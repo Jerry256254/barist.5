@@ -2,7 +2,7 @@
 """Regex gate: >=200 benign trigger sentences must produce ZERO hard pre-filter hits.
 Run: python scripts/test_regex.py   (also wired into pytest via tests/test_regex_gate.py)
 Writes reports/regex_gate.json."""
-import json
+import json, os
 from pathlib import Path
 import sys
 
@@ -27,9 +27,30 @@ def main():
     assert len(rows) >= 200, f"need >=200 benign trigger rows, have {len(rows)}"
     fps = [(r["text"], must_catch_hit(r["text"])) for r in rows if must_catch_hit(r["text"])]
     misses = [(t, must_catch_hit(t)) for t in BLOCK if not must_catch_hit(t)]
+    # Barist.5: optional full-pipeline gate (model + regex + category block) when a
+    # model dir is available — the report required the gate to go through predict().
+    full_fp = None
+    mdir = os.environ.get("GATE_MODEL_DIR")
+    if mdir:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("censer_mod", Path(__file__).parent / "censer.py")
+        cm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cm)
+        pipe = cm.CenserPipeline(mdir)
+        # Barist.5: full-pipeline gate. HARD fail = any benign row forced unsafe by the
+        # pre-filter (override set). Raw model FPs are reported separately (info) and
+        # are covered by the cs_benign / user_benign release gates.
+        preds = [pipe.predict(r["text"]) for r in rows]
+        override_fp = [r["text"] for r, pr in zip(rows, preds) if pr["unsafe"] and pr.get("override")]
+        full_fp = [(r["text"], pr["label"]) for r, pr in zip(rows, preds) if pr["unsafe"]]
+        rep_full_pass = len(override_fp) == 0
+    else:
+        rep_full_pass = None
     rep = {"n_benign": len(rows), "hard_FP": len(fps), "fp_items": fps,
            "n_block": len(BLOCK), "misses": misses,
-           "pass": len(fps) == 0 and len(misses) == 0}
+           "full_predict_fp": full_fp, "full_predict_override_fp": override_fp,
+           "full_predict_pass": rep_full_pass,
+           "pass": len(fps) == 0 and len(misses) == 0 and rep_full_pass is not False}
     out = Path(__file__).parent.parent / "reports/regex_gate.json"
     out.parent.mkdir(exist_ok=True)
     out.write_text(json.dumps(rep, indent=2, ensure_ascii=False))

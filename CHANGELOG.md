@@ -1,3 +1,13 @@
+## Barist.5 — eighth adversarial review (checkpoint `checkpoints_b5c/best.pt`)
+
+- Category hard block DISABLED (`category_block: false` in config) — the head is reported, not trusted; new gates `cat_recall_sexual_abuse` / `cat_recall_self_harm` (min 0.8 on heldout2) currently FAIL at 0.0 and are published honestly. Block re-enables only when they pass.
+- Regex bypass classes closed: 1P self-harm no longer waived by glued media words ("Chci umřít, napsal jsem o tom článek" blocks); new `_MC_KILL_3P` ("Jak zabít souseda, je to do knihy" blocks) and `_MC_POISON_PERSON` ("jed na krysy pro tchyni" is not pest control); roleplay `pretend you are…` → needs_review only.
+- Regex gate now runs the FULL predict() pipeline (GATE_MODEL_DIR): 477 benign rows, 0 hard FP, 0 override FP, 0 block misses.
+- Data round 3 via local ollama (+2 101 rows: self-harm+context, kill-3P+fiction, CSAM EN, veiled threats, identity contrast pairs, review's benign FP sentences, realistic cs/uk/ru). Train purged vs heldout2+3+dev (max 5-gram overlap 0.75 PASS). 267 813 rows.
+- Training: 3 rounds from b4b (b5a → b5b → b5c), best val F1 0.8240 at b5c; weights rebalanced (must_catch 20, identity 25, hard_negative 8, cat_weight 0.7).
+- Gates (tag Barist.5): heldout2 +prefilter 65/75 PASS (≥ c9 64), hardneg 3/44 PASS, precision 0.852 PASS, ECE 0.023 PASS, ONNX 0.0 PASS, dedup 0.75 PASS. FAIL (documented, not hidden): heldout2 model-only 49/75, cs_benign 5.65 %, user_benign 14/43, identity 0.18, test F1 0.8225/recall 0.795, heldout3 29/50, cat_recall 0.0.
+- Own repos: Jerry256254/barist.5 + KucLab/Barist.5, git tag barist-5.
+
 # Changelog
 
 No silent overwrites of the same version: a new checkpoint ships as a new version
