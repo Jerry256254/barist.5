@@ -30,6 +30,7 @@ def main():
     # Barist.5: optional full-pipeline gate (model + regex + category block) when a
     # model dir is available — the report required the gate to go through predict().
     full_fp = None
+    override_fp = None
     mdir = os.environ.get("GATE_MODEL_DIR")
     if mdir:
         import importlib.util
