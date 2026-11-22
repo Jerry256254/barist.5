@@ -1,3 +1,6 @@
+> **Successor: [Barist.6](https://huggingface.co/KucLab/Barist.6)** (GitHub: [Jerry256254/barist.6](https://github.com/Jerry256254/barist.6)) — ninth adversarial review: CSAM regex narrowed to acquisition actions (education/parenting frames can never match), kill idioms removed, game-frame 1P self-harm bypass closed (negation-aware), prodám-market patterns, `category` column on heldout2 + new identity_recall gate. Regex gate 518 benign / 0 FP through the full pipeline. Data round 4 (+170 targeted rows), checkpoints_b6b. This repo is kept as-is.
+
+
 # Barist.4
 
 > **Naming note:** this is the successor of the Censer line (Censer.1–.9). Too many
